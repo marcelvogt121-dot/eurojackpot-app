@@ -6,13 +6,13 @@ TIPPS = {
     "Tipp 2": {"zahlen": [4, 5, 8, 20, 43], "euro": [4, 10]}
 }
 
-st.set_page_config(page_title="Eurojackpot Tippgemeinschaft", page_icon="🎰", layout="wide")
+st.set_page_config(page_title="Eurojackpot Check", page_icon="🎰", layout="wide")
 
 # --- SEITENLEISTE: MANUELLE KONTROLLE ---
 st.sidebar.header("📝 Ziehung aktualisieren")
 st.sidebar.write("Trage hier die Zahlen vom Freitag/Dienstag ein:")
 
-# HIER SIND JETZT DIE ECHTEN ZAHLEN VOM 24.03.2026 EINGETRAGEN
+# Standardwerte (Echte Zahlen vom 24.03.2026)
 zug_z = st.sidebar.text_input("Gezogene Zahlen (mit Komma)", "9,15,23,43,48")
 zug_e = st.sidebar.text_input("Gezogene Eurozahlen (mit Komma)", "3,5")
 zug_j = st.sidebar.text_input("Jackpot Höhe", "23 Mio. €")
@@ -23,7 +23,7 @@ try:
     final_z = [int(x.strip()) for x in zug_z.split(",")]
     final_e = [int(x.strip()) for x in zug_e.split(",")]
 except:
-    st.sidebar.error("Bitte Zahlen korrekt mit Komma trennen (z.B. 9,15,23...)")
+    st.sidebar.error("Bitte Zahlen korrekt mit Komma trennen!")
     final_z, final_e = [0,0,0,0,0], [0,0]
 
 # --- HAUPTBEREICH ---
@@ -32,18 +32,8 @@ st.metric("Aktueller Jackpot", zug_j)
 st.info(f"Ergebnisse für die Ziehung am {zug_d}")
 
 st.markdown("---")
-st.write("### 🟢 Offizielle Ziehungszahlen:")
-cols = st.columns(7)
-# Die 5 Hauptzahlen
-for i, val in enumerate(final_z):
-    cols[i].success(f"**{val}**")
-# Die 2 Eurozahlen
-for i, val in enumerate(final_e):
-    cols[i+5].warning(f"**{val}**")
 
-st.markdown("---")
-
-# AUSWERTUNG DER 2 TIPPS
+# AUSWERTUNG DER 2 TIPPS (Direkter Vergleich)
 st.header("🔍 Abgleich mit unseren Dauer-Tipps")
 c1, c2 = st.columns(2)
 
@@ -61,7 +51,7 @@ for i, (name, tipp) in enumerate(TIPPS.items()):
         m1.metric("Richtige Zahlen", f"{len(t_z)}/5", f"+{list(t_z)}" if t_z else None)
         m2.metric("Eurozahlen", f"{len(t_e)}/2", f"+{list(t_e)}" if t_e else None)
         
-        # Gewinn-Logik (Klasse 12: 2 Zahlen + 1 Eurozahl)
+        # Gewinn-Logik
         if (len(t_z) >= 2 and len(t_e) >= 1) or len(t_z) >= 3:
             st.balloons()
             st.success("💰 GEWINN! Kontostand prüfen!")
@@ -69,4 +59,4 @@ for i, (name, tipp) in enumerate(TIPPS.items()):
             st.info("Diese Woche leider kein Treffer.")
 
 st.sidebar.markdown("---")
-st.sidebar.write("💡 **Tipp:** Du kannst die Zahlen jeden Freitagabend hier in der Leiste ändern, dann rechnet die App sofort alles aus!")
+st.sidebar.write("💡 **Info:** Die Gewinnprüfung erfolgt direkt gegen die oben in der Leiste eingetragenen Zahlen.")
