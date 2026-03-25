@@ -1,85 +1,88 @@
 import streamlit as st
 import requests
+from bs4 import BeautifulSoup
 
-# --- KONFIGURATION: EURE ECHTEN ZAHLEN ---
+# --- DEINE ZAHLEN (FEST) ---
 TIPPS = {
     "Tipp 1": {"zahlen": [1, 12, 22, 27, 34], "euro": [5, 6]},
     "Tipp 2": {"zahlen": [4, 5, 8, 20, 43], "euro": [4, 10]}
 }
 
-st.set_page_config(page_title="Eurojackpot Live-Check", page_icon="🎰", layout="wide")
+st.set_page_config(page_title="Eurojackpot Check", page_icon="🎰")
 
-# FUNKTION: Holt die Daten über eine stabilere Schnittstelle
-@st.cache_data(ttl=3600)
-def get_lotto_data():
+# FUNKTION: Versucht die echten Zahlen zu holen
+def fetch_lotto_data():
     try:
-        # Wir nutzen eine API-Schnittstelle, die direkt JSON-Daten liefert
-        url = "https://www.lotto.de/api/stats/eurojackpot"
-        response = requests.get(url, timeout=10)
-        data = response.json()
+        url = "https://www.lotto.de/eurojackpot"
+        headers = {'User-Agent': 'Mozilla/5.0'}
+        response = requests.get(url, headers=headers, timeout=5)
+        soup = BeautifulSoup(response.text, 'html.parser')
         
-        # Extraktion der letzten Ziehung
-        last_draw = data['lastDraw']
-        return {
-            "zahlen": last_draw['numbers'],
-            "eurozahlen": last_draw['euroNumbers'],
-            "datum": last_draw['date'],
-            "jackpot": f"{data['jackpot']} Mio. €"
-        }
+        # Suche nach den Gewinnzahlen im HTML
+        # Hinweis: Wenn lotto.de das Design ändert, müssen wir hier nachbessern
+        digits = [d.text.strip() for d in soup.find_all('span', class_='yl-digit')]
+        
+        if len(digits) >= 7:
+            return {
+                "z": [int(x) for x in digits[:5]],
+                "e": [int(x) for x in digits[5:7]],
+                "jackpot": soup.find('div', class_='yl-jackpot-value').text.strip(),
+                "datum": soup.find('span', class_='yl-draw-date').text.strip()
+            }
     except:
-        # Falls die API mal hakt, hier die echten Zahlen vom 24.03.2026 (Beispiel)
-        return {
-            "zahlen": [11, 12, 19, 33, 41], 
-            "eurozahlen": [2, 10], 
-            "jackpot": "ca. 10 Mio. €", 
-            "datum": "24.03.2026"
-        }
+        pass
+    return None
 
-# Daten laden
-live = get_lotto_data()
+# Daten abrufen
+live_results = fetch_lotto_data()
 
+# --- SEITENLEISTE FÜR MANUELLE KORREKTUR ---
+st.sidebar.header("⚙️ Daten-Kontrolle")
+st.sidebar.write("Falls die Automatik hakt, hier korrigieren:")
+
+if live_results:
+    def_z = ",".join(map(str, live_results["z"]))
+    def_e = ",".join(map(str, live_results["e"]))
+    def_j = live_results["jackpot"]
+else:
+    def_z, def_e, def_j = "1,2,3,4,5", "1,2", "10 Mio. €"
+
+input_z = st.sidebar.text_input("Gezogene Zahlen (mit Komma)", def_z)
+input_e = st.sidebar.text_input("Gezogene Eurozahlen (mit Komma)", def_e)
+input_j = st.sidebar.text_input("Aktueller Jackpot", def_j)
+
+# Umwandeln der Inputs in Listen
+final_z = [int(x.strip()) for x in input_z.split(",")]
+final_e = [int(x.strip()) for x in input_e.split(",")]
+
+# --- HAUPTBEREICH ---
 st.title("🎰 Eurojackpot Live-Check")
-st.write(f"Automatische Prüfung für unseren Dauerauftrag")
+st.metric("Aktueller Jackpot", input_j)
+st.write(f"Abgleich für unsere 2 Felder")
+
+st.markdown("---")
+st.subheader("Gezogene Zahlen dieser Woche:")
+c_z = st.columns(7)
+for i, val in enumerate(final_z):
+    c_z[i].success(f"**{val}**")
+for i, val in enumerate(final_e):
+    c_z[i+5].warning(f"**{val}**")
+
 st.markdown("---")
 
-# Jackpot & Ziehungsinfo
-col_info1, col_info2 = st.columns(2)
-col_info1.metric("Aktueller Jackpot", live["jackpot"])
-col_info2.metric("Letzte Ziehung vom", live["datum"])
-
-# GEZOGENE ZAHLEN VISUELL
-st.subheader("Gezogene Zahlen")
-z_cols = st.columns(7)
-for i, n in enumerate(live["zahlen"]):
-    z_cols[i].markdown(f"<div style='text-align:center; padding:10px; border-radius:50%; background-color:#FFD700; color:black; font-weight:bold;'>{n}</div>", unsafe_allow_html=True)
-for i, e in enumerate(live["eurozahlen"]):
-    z_cols[i+5].markdown(f"<div style='text-align:center; padding:10px; border-radius:50%; background-color:#1E90FF; color:white; font-weight:bold;'>{e}</div>", unsafe_allow_html=True)
-
-st.markdown("<br>", unsafe_allow_html=True)
-
-# AUSWERTUNG DER FELDER
-st.header("🔍 Abgleich unserer Tipps")
-c1, c2 = st.columns(2)
-
-for i, (name, tipp) in enumerate(TIPPS.items()):
-    with (c1 if i == 0 else c2):
-        st.subheader(f"⭐ {name}")
-        
-        # Treffer finden
-        treffer_z = set(tipp["zahlen"]).intersection(set(live["zahlen"]))
-        treffer_e = set(tipp["euro"]).intersection(set(live["eurozahlen"]))
-        
-        # Anzeige
-        st.write(f"Zahlen: `{tipp['zahlen']}` | Euro: `{tipp['euro']}`")
-        
-        res1, res2 = st.columns(2)
-        res1.metric("Richtige (5)", len(treffer_z), f"+{list(treffer_z)}" if treffer_z else None)
-        res2.metric("Euro (2)", len(treffer_e), f"+{list(treffer_e)}" if treffer_e else None)
-        
-        if len(treffer_z) + len(treffer_e) >= 3:
-            st.balloons()
-            st.success("💰 GEWINN!")
-        else:
-            st.info("Kein Gewinn.")
-
-st.sidebar.button("Daten aktualisieren", on_click=st.cache_data.clear)
+# AUSWERTUNG
+for name, tipp in TIPPS.items():
+    st.subheader(f"⭐ {name}")
+    
+    t_z = set(tipp["zahlen"]).intersection(set(final_z))
+    t_e = set(tipp["euro"]).intersection(set(final_e))
+    
+    col1, col2, col3 = st.columns([2,1,1])
+    col1.write(f"Tipp: {tipp['zahlen']} | Euro: {tipp['euro']}")
+    col2.metric("Richtige", f"{len(t_z)}")
+    col3.metric("Eurozahlen", f"{len(t_e)}")
+    
+    if len(t_z) + len(t_e) >= 3:
+        st.balloons()
+        st.success("💰 GEWINN!")
+    st.markdown("---")
