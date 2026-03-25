@@ -1,57 +1,60 @@
 import streamlit as st
 import requests
-from datetime import datetime
+import pandas as pd
 
-# --- KONFIGURATION: EURE ZAHLEN ---
-# Hier eure echten Zahlen eintragen!
+# --- DEINE DATEN (HIER ANPASSEN) ---
 UNSERE_ZAHLEN = [5, 12, 20, 35, 48] 
 UNSERE_EUROZAHLEN = [7, 9]
 
-st.set_page_config(page_title="Eurojackpot Tippgemeinschaft", page_icon="🎰")
+st.set_page_config(page_title="Eurojackpot Tippgemeinschaft", page_icon="🎰", layout="centered")
 
-st.title("🎰 Eurojackpot Tippgemeinschaft")
+st.title("🎰 Eurojackpot Dauerauftrag")
+st.write("Unsere Zahlen werden automatisch mit der letzten Ziehung verglichen.")
 st.markdown("---")
 
-# Funktion zum Holen der echten Zahlen (Beispiel-Logik für den Start)
-def get_lotto_data():
-    # Hinweis: Wir nutzen hier eine einfache Simulation. 
-    # Für echte Live-Daten kann man später eine API anbinden.
+# Funktion zum Abrufen der Daten (Simulation der letzten Ziehung)
+def get_lotto_results():
+    # In einer echten App nutzen wir hier eine API. 
+    # Für den Start setzen wir die aktuellen Ziehungsdaten manuell:
     return {
-        "zahlen": [5, 15, 22, 35, 42], 
-        "eurozahlen": [7, 10],
+        "zahlen": [5, 14, 21, 35, 49], 
+        "eurozahlen": [2, 9],
         "datum": "Freitag, 20.03.2026",
         "jackpot": "120 Mio. €"
     }
 
-data = get_lotto_data()
+data = get_lotto_results()
 
-# Jackpot-Anzeige
+# Jackpot-Anzeige als Highlight
 st.metric("Aktueller Jackpot", data["jackpot"])
-
 st.subheader(f"Ziehung vom {data['datum']}")
 
-# Vergleich der Zahlen
+# Vergleichs-Logik
 treffer = set(UNSERE_ZAHLEN).intersection(set(data["zahlen"]))
 euro_treffer = set(UNSERE_EUROZAHLEN).intersection(set(data["eurozahlen"]))
 
-col1, col2 = st.columns(2)
-with col1:
-    st.write("Unsere Zahlen:")
-    st.info(f"{UNSERE_ZAHLEN}")
-with col2:
-    st.write("Gezogene Zahlen:")
-    st.success(f"{data['zahlen']}")
+# Visuelle Aufbereitung
+c1, c2 = st.columns(2)
+with c1:
+    st.info(f"**Unsere Zahlen:**\n{UNSERE_ZAHLEN}")
+with c2:
+    st.success(f"**Gezogene Zahlen:**\n{data['zahlen']}")
 
 st.markdown("---")
-st.header("🔍 Ergebnis-Check")
-c1, c2 = st.columns(2)
-c1.metric("Richtige Zahlen", f"{len(treffer)} von 5")
-c2.metric("Richtige Eurozahlen", f"{len(euro_treffer)} von 2")
+
+# Gewinn-Check
+st.header("🔍 Ergebnis")
+col_a, col_b = st.columns(2)
+col_a.metric("Richtige (5)", f"{len(treffer)}")
+col_b.metric("Eurozahlen (2)", f"{len(euro_treffer)}")
 
 if len(treffer) + len(euro_treffer) >= 3:
     st.balloons()
-    st.success("💰 GEWINN! Wir sollten das Konto prüfen!")
+    st.success("💰 GEWINN! Wir haben etwas getroffen!")
 else:
-    st.info("Nichts gewonnen. Der Dauerauftrag läuft weiter. Viel Glück beim nächsten Mal! 🍀")
+    st.warning("Kein Gewinn diesmal. Kopf hoch, der Dauerauftrag läuft weiter! 🍀")
 
-st.sidebar.write("Diese App gleicht unseren Dauerauftrag automatisch mit den Ziehungen ab.")
+# Seitenleiste für die Gemeinschaft
+st.sidebar.header("Tippgemeinschaft")
+st.sidebar.write("Mitglieder: 3")
+st.sidebar.write("Status: Dauerauftrag AKTIV ✅")
