@@ -1,60 +1,68 @@
 import streamlit as st
-import requests
-import pandas as pd
 
-# --- DEINE DATEN (HIER ANPASSEN) ---
-UNSERE_ZAHLEN = [5, 12, 20, 35, 48] 
-UNSERE_EUROZAHLEN = [7, 9]
+# --- KONFIGURATION: EURE ECHTEN ZAHLEN ---
+TIPPS = {
+    "Tipp 1": {"zahlen": [1, 12, 22, 27, 34], "euro": [5, 6]},
+    "Tipp 2": {"zahlen": [4, 5, 8, 20, 43], "euro": [4, 10]}
+}
 
-st.set_page_config(page_title="Eurojackpot Tippgemeinschaft", page_icon="🎰", layout="centered")
+st.set_page_config(page_title="Eurojackpot Tippgemeinschaft", page_icon="🎰", layout="wide")
 
-st.title("🎰 Eurojackpot Dauerauftrag")
-st.write("Unsere Zahlen werden automatisch mit der letzten Ziehung verglichen.")
+st.title("🎰 Eurojackpot: Unsere Daueraufträge")
+st.write("Hier werden unsere festen Zahlen automatisch mit der letzten Ziehung abgeglichen.")
 st.markdown("---")
 
-# Funktion zum Abrufen der Daten (Simulation der letzten Ziehung)
-def get_lotto_results():
-    # In einer echten App nutzen wir hier eine API. 
-    # Für den Start setzen wir die aktuellen Ziehungsdaten manuell:
-    return {
-        "zahlen": [5, 14, 21, 35, 49], 
-        "eurozahlen": [2, 9],
-        "datum": "Freitag, 20.03.2026",
-        "jackpot": "120 Mio. €"
-    }
+# Aktuelle Ziehungsdaten (Beispielhaft für die letzte Ziehung)
+# Diese Zahlen kannst du hier immer nach einer Ziehung aktualisieren:
+ziehungs_daten = {
+    "zahlen": [1, 15, 22, 29, 34], # Beispielzahlen der Ziehung
+    "eurozahlen": [5, 11],         # Beispiel-Eurozahlen
+    "datum": "Freitag, 27.03.2026",
+    "jackpot": "120 Mio. €"
+}
 
-data = get_lotto_results()
+# Jackpot-Anzeige oben
+st.metric("Aktueller Jackpot", ziehungs_daten["jackpot"])
+st.subheader(f"Ergebnisse der Ziehung vom {ziehungs_daten['datum']}")
 
-# Jackpot-Anzeige als Highlight
-st.metric("Aktueller Jackpot", data["jackpot"])
-st.subheader(f"Ziehung vom {data['datum']}")
-
-# Vergleichs-Logik
-treffer = set(UNSERE_ZAHLEN).intersection(set(data["zahlen"]))
-euro_treffer = set(UNSERE_EUROZAHLEN).intersection(set(data["eurozahlen"]))
-
-# Visuelle Aufbereitung
-c1, c2 = st.columns(2)
-with c1:
-    st.info(f"**Unsere Zahlen:**\n{UNSERE_ZAHLEN}")
-with c2:
-    st.success(f"**Gezogene Zahlen:**\n{data['zahlen']}")
+# Anzeige der gezogenen Zahlen als Buttons (optische Aufwertung)
+cols = st.columns(7)
+for i, z in enumerate(ziehungs_daten["zahlen"]):
+    cols[i].button(f"{z}", key=f" gezogen_{i}", disabled=True)
+for i, e in enumerate(ziehungs_daten["eurozahlen"]):
+    cols[i+5].button(f"{e}", key=f"euro_gezogen_{i}", type="primary", disabled=True)
 
 st.markdown("---")
 
-# Gewinn-Check
-st.header("🔍 Ergebnis")
-col_a, col_b = st.columns(2)
-col_a.metric("Richtige (5)", f"{len(treffer)}")
-col_b.metric("Eurozahlen (2)", f"{len(euro_treffer)}")
+# AUSWERTUNG DER BEIDEN TIPPS
+col_f1, col_f2 = st.columns(2)
 
-if len(treffer) + len(euro_treffer) >= 3:
-    st.balloons()
-    st.success("💰 GEWINN! Wir haben etwas getroffen!")
-else:
-    st.warning("Kein Gewinn diesmal. Kopf hoch, der Dauerauftrag läuft weiter! 🍀")
+for i, (name, tipp) in enumerate(TIPPS.items()):
+    with (col_f1 if i == 0 else col_f2):
+        st.header(f"⭐ {name}")
+        
+        # Treffer berechnen
+        treffer_z = set(tipp["zahlen"]).intersection(set(ziehungs_daten["zahlen"]))
+        treffer_e = set(tipp["euro"]).intersection(set(ziehungs_daten["eurozahlen"]))
+        
+        # Anzeige der eigenen Zahlen
+        st.write(f"**Deine Zahlen:** {tipp['zahlen']}")
+        st.write(f"**Zusatzzahlen:** {tipp['euro']}")
+        
+        # Metriken für die Trefferquote
+        m1, m2 = st.columns(2)
+        m1.metric("Richtige Zahlen", f"{len(treffer_z)} von 5", f"{list(treffer_z)}" if treffer_z else None)
+        m2.metric("Richtige Euro", f"{len(treffer_e)} von 2", f"{list(treffer_e)}" if treffer_e else None)
+        
+        # Gewinn-Check (Mindestens 2 Zahlen + 1 Eurozahl oder Ähnliches)
+        if (len(treffer_z) >= 2 and len(treffer_e) >= 1) or len(treffer_z) >= 3:
+            st.success("💰 GEWINN IN DIESEM FELD!")
+            st.balloons()
+        else:
+            st.info("Kein Gewinn in dieser Gewinnklasse.")
 
-# Seitenleiste für die Gemeinschaft
-st.sidebar.header("Tippgemeinschaft")
-st.sidebar.write("Mitglieder: 3")
-st.sidebar.write("Status: Dauerauftrag AKTIV ✅")
+st.sidebar.header("Tipp-Informationen")
+st.sidebar.write("**Dauerauftrag:** Aktiv ✅")
+st.sidebar.write("**Mitglieder:** Marcel & Co.")
+st.sidebar.markdown("---")
+st.sidebar.warning("Hinweis: Gewinne werden ab Klasse 12 angezeigt.")
