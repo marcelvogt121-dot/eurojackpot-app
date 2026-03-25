@@ -10,12 +10,11 @@ st.set_page_config(page_title="Eurojackpot Check", page_icon="🎰", layout="wid
 
 # --- SEITENLEISTE: MANUELLE KONTROLLE ---
 st.sidebar.header("📝 Ziehung aktualisieren")
-st.sidebar.write("Trage hier die Zahlen vom Freitag/Dienstag ein:")
+st.sidebar.write("Trage hier die Zahlen der Ziehung ein:")
 
-# Standardwerte (Echte Zahlen vom 24.03.2026)
+# Eingabefelder in der Sidebar (Voreingestellt auf die Ziehung vom 24.03.2026)
 zug_z = st.sidebar.text_input("Gezogene Zahlen (mit Komma)", "9,15,23,43,48")
 zug_e = st.sidebar.text_input("Gezogene Eurozahlen (mit Komma)", "3,5")
-zug_j = st.sidebar.text_input("Jackpot Höhe", "23 Mio. €")
 zug_d = st.sidebar.text_input("Datum der Ziehung", "Dienstag, 24.03.2026")
 
 # Umwandlung der Eingabe in Listen für den Vergleich
@@ -28,12 +27,11 @@ except:
 
 # --- HAUPTBEREICH ---
 st.title("🎰 Eurojackpot: Gewinn-Check")
-st.metric("Aktueller Jackpot", zug_j)
-st.info(f"Ergebnisse für die Ziehung am {zug_d}")
+st.info(f"Abgleich für die Ziehung am: **{zug_d}**")
 
 st.markdown("---")
 
-# AUSWERTUNG DER 2 TIPPS (Direkter Vergleich)
+# AUSWERTUNG DER 2 TIPPS
 st.header("🔍 Abgleich mit unseren Dauer-Tipps")
 c1, c2 = st.columns(2)
 
@@ -51,12 +49,12 @@ for i, (name, tipp) in enumerate(TIPPS.items()):
         m1.metric("Richtige Zahlen", f"{len(t_z)}/5", f"+{list(t_z)}" if t_z else None)
         m2.metric("Eurozahlen", f"{len(t_e)}/2", f"+{list(t_e)}" if t_e else None)
         
-        # Gewinn-Logik
+        # Gewinn-Logik (Klasse 12: 2 Zahlen + 1 Eurozahl)
         if (len(t_z) >= 2 and len(t_e) >= 1) or len(t_z) >= 3:
             st.balloons()
-            st.success("💰 GEWINN! Kontostand prüfen!")
+            st.success("💰 GEWINN!")
         else:
-            st.info("Diese Woche leider kein Treffer.")
+            st.info("Kein Gewinn.")
 
 st.sidebar.markdown("---")
-st.sidebar.write("💡 **Info:** Die Gewinnprüfung erfolgt direkt gegen die oben in der Leiste eingetragenen Zahlen.")
+st.sidebar.write("💡 Ändere die Zahlen links, um den Check für eine neue Ziehung zu machen.")
