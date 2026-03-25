@@ -1,0 +1,2 @@
+# eurojackpot-app
+Tippgemeinschaft
